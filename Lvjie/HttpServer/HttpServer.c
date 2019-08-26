@@ -54,11 +54,12 @@ int main(int argc,char *argv[])
             exit(1);
         }
         else{
-            char request[1024];
+            char request[1024]="";
             recv(connfd,request,1024,0);
             request[strlen(request)+1] = '\0';
             printf("接受到的请求为：\n");
             printf("%s\n",request);
+            //printf("客户端发出的请求结束\n");
             char buf[520]="HTTP/1.1 200 ok\r\nconnection: close\r\n\r\n";   //HTTP响应
             int s = send(connfd,buf,strlen(buf),0);
             int fd = open("hello.txt",O_RDONLY);
