@@ -17,7 +17,9 @@ void Error(char *message);
 #define PAGE "/"
 #define USERAGENT "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/30.0.1599.114 Safari/537.36"
 #define ACCEPTLANGUAGE "zh-CN,zh;q=0.8,en;q=0.6,en-US;q=0.4,en-GB;q=0.2"
-int main(int argc,char **argv){
+
+int main(int argc,char **argv)
+{
     int sock;
     char *ip;
     char *get;
@@ -76,7 +78,7 @@ void sendmessage(char *get,int sock)
 {
     char buf[BUFSIZ + 1];
     FILE *filerecv = NULL;
-    printf("send GET require\n<start>\n%s\n<end>\n",get);
+    //printf("send GET require\n<start>\n%s\n<end>\n",get);
     int flag = 0;
     int ret;
     while(flag < strlen(get)){
@@ -89,7 +91,12 @@ void sendmessage(char *get,int sock)
     memset(buf,0,sizeof(buf));
     int htmlstart=0;
     char *htmlcontent;
+    char *receive_info;
+    fprintf(stdout,"---------------------------receive informations are:---------------------\n");
+
     while((flag = recv(sock,buf,BUFSIZ,0)) > 0){
+        buf[strlen(buf) + 1] = '\0';
+        fprintf(stdout,buf);
         if(htmlstart == 0){
             htmlcontent = strstr(buf,"\r\n\r\n");   //定位至服务器发送的内容位置
             if(htmlcontent != NULL){
@@ -106,11 +113,12 @@ void sendmessage(char *get,int sock)
             }
             fprintf(filerecv,"%s",htmlcontent);
             fclose(filerecv);
-            fprintf(stdout,"%s",htmlcontent);
+            //fprintf(stdout,"%s",htmlcontent);
         }
         memset(buf,0,flag);
     }
-    printf("receive data over!\n");
+    //receive_info[strlen(receive_info) + 1] = '\0';
+    fprintf(stdout,"------------------------receive data over!-----------------------------------\n");
     if(flag < 0){
         Error("Error receiving data!\n");
     }
@@ -119,7 +127,7 @@ void sendmessage(char *get,int sock)
 }
 
 void usage(){
-    printf("USAGE:example:127.0.0.1 8888\n");
+    fprintf(stdout,"USAGE:example:127.0.0.1 8888 or 127.0.0.1 8888 /Lvjie/hello.c\n");
 }
 
 int create_socket(){

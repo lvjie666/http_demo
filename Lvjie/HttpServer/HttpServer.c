@@ -10,6 +10,7 @@
 #include<assert.h>
 #include<unistd.h>
 #include<string.h>
+#include <ctype.h>
 
 //const int port = 8888;        //指定端口号
 
@@ -18,6 +19,23 @@ int Bind(int port);
 int Listen(int server_sock);
 void Accept_and_Send(int server_sock);
 void Error(char *message);
+void get_url(char *req,int client);
+char srcpath[100] ="";           //record the url path
+void src_not_found(int client);
+
+int main(int argc,char *argv[])
+{
+    int server_sock;
+    int port = atoi(argv[1]);
+    server_sock = Bind(port);
+    fprintf(stdout,"---------The server is open and waiting for the client to connect.--------------\n");
+    while(1){
+        Accept_and_Send(server_sock);
+        fprintf(stdout,"--------------------------------------------------------------------------------\n");
+    }
+    close(server_sock);
+    return 0;
+}
 
 int create_socket()
 {
@@ -62,6 +80,7 @@ void Accept_and_Send(int server_sock)
 {
     struct sockaddr_in client_addr;
     int connfd;
+    struct stat st;
     socklen_t client_addr_length = sizeof(client_addr);  //和int具有相同的长度
     connfd = accept(server_sock,(struct sockaddr*)&client_addr,&client_addr_length); //接受客户端请求
     if(connfd == -1){
@@ -81,29 +100,88 @@ void Accept_and_Send(int server_sock)
     }
     request[strlen(request)+1] = '\0';
     printf("%s\n",request);
+    
+    get_url(request,connfd);
+    printf("your request url is %s\n",srcpath);
 
-    char buf[520]="HTTP/1.1 200 ok\r\nconnection: close\r\n\r\n";   //HTTP响应
-    ssize_t sendlen = send(connfd,buf,strlen(buf),0);
-    if(sendlen < 0)
-    {
-        Error("send message is error\n");
-    }else if(sendlen == 0){
-        Error("send message is falied,connection break\n");
-    }
-    else{
-        printf("send message successful\n");
-    }
-
-    int fd = open("hello.txt",O_RDONLY);
+    int fd = open(srcpath,O_RDONLY);
     if(fd <= 0){
-        Error("open error\n");
-    }
-    ssize_t sendfile_len = sendfile(connfd,fd,NULL,2500);     //NULL表示读入文件流默认的启示位置，count指定两个文件>描述符之间的字节数
-    if(sendfile_len == -1){
-        Error("sendfile is failed\n");
+        src_not_found(connfd);
+        fprintf(stdout,"your request information is nonexistent\n");
+    }else{
+        char buf[520]="HTTP/1.1 200 ok\r\nContent-Type: text/html\r\n\r\n";   //HTTP响应
+        ssize_t sendlen = send(connfd,buf,strlen(buf),0);
+        if(sendlen < 0)
+        {
+            Error("send_http_header is error\n");
+        }else if(sendlen == 0){
+            Error("send_http_header is falied,connection break\n");
+        }
+        else{
+            fprintf(stdout,"send_http_header successful\n");
+        }
+
+        ssize_t sendfile_len = sendfile(connfd,fd,NULL,2500);     //NULL表示读入文件流默认的启示位置，count指定两个文件>描述符之间的字节数
+        if(sendfile_len == -1){
+            Error("sendfile is failed\n");
+        }else{
+            fprintf(stdout,"send request information successful\n");
+        }
     }
     close(fd);
     close(connfd);
+}    
+
+void get_url(char *req,int client)
+{
+    int i = 0;
+    int j = 0;
+    char url[100] = "";
+    char *request = req;
+    //char path[100] = "";
+    struct stat st;
+    while(!(isspace(request[i])) && (i < strlen(request))){   //找到第一个空格处
+        i++;
+    }
+    i++;
+    while(!(isspace(request[i]))){
+        url[j] = request[i];
+        i++;
+        j++;    
+    }
+    url[j + 1] = '\0';
+    sprintf(srcpath,"documents%s",url);
+    if(srcpath[strlen(srcpath) - 1] == '/'){
+        strcat(srcpath,"index.html");
+    }
+    if(stat(srcpath,&st) == -1){
+        //src_not_found(client);
+        //exit(1);
+        fprintf(stderr,"The path is invalid! Please try again!\n");
+    }else{
+        if((st.st_mode & S_IFMT) == S_IFDIR){
+            strcat(srcpath, "/index.html");
+        }
+    }
+}
+
+void src_not_found(int client)
+{
+    char buf[1024];
+    char buftest[520]="HTTP/1.1 404 Not Found\r\nContent-Type: text/html\r\n\r\n";
+    send(client, buftest, strlen(buftest), 0);
+    sprintf(buf, "\r\n");
+    send(client, buf, strlen(buf), 0);
+    sprintf(buf, "<HTML><TITLE>Not Found</TITLE>\r\n");
+    send(client, buf, strlen(buf), 0);
+    sprintf(buf, "<BODY><P>The server could not fulfill\r\n");
+    send(client, buf, strlen(buf), 0);
+    sprintf(buf, "your request because the resource specified\r\n");
+    send(client, buf, strlen(buf), 0);
+    sprintf(buf, "is unavailable or nonexistent.\r\n");
+    send(client, buf, strlen(buf), 0);
+    sprintf(buf, "</BODY></HTML>\r\n");
+    send(client, buf, strlen(buf), 0);
 }
 
 void Error(char *message)
@@ -112,15 +190,3 @@ void Error(char *message)
     exit(1);
 }
 
-int main(int argc,char *argv[])
-{
-    int server_sock;
-    int port = atoi(argv[1]);
-    server_sock = Bind(port);
-    printf("---------The server is open and waiting for the client to connect.--------------\n");
-    while(1){
-        Accept_and_Send(server_sock);
-        printf("--------------------------------------------------------------------------------\n");
-    }
-    return 0;
-}
