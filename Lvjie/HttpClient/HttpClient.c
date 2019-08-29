@@ -1,11 +1,14 @@
-#include <stdio.h>
-#include <sys/socket.h>
-#include <arpa/inet.h>
-#include <stdlib.h>
-#include <netdb.h>
-#include <string.h>
-#include <fcntl.h>
-#include <unistd.h>
+#include<stdio.h>
+#include<sys/socket.h>
+#include<arpa/inet.h>
+#include<stdlib.h>
+#include<netdb.h>
+#include<string.h>
+#include<fcntl.h>
+#include<unistd.h>
+#include<time.h>
+
+char *get_time();
 int create_socket();
 char *get_ip(char *host);
 int Connect(int port,char *ip);
@@ -51,7 +54,8 @@ int main(int argc,char **argv)
 int Connect(int port,char *ip)
 {
     int client_sock;
-    int ret;
+    int ret1;
+    int i = 0;
     struct sockaddr_in *client_addr;
     client_addr = (struct sockaddr_in *)malloc(sizeof(struct sockaddr_in*));
     if(client_addr == NULL){
@@ -62,14 +66,20 @@ int Connect(int port,char *ip)
     client_addr->sin_family = AF_INET;
     client_addr->sin_port = htons(port);
     client_sock = create_socket();
-    ret = inet_pton(AF_INET,ip,(void *)(&(client_addr->sin_addr.s_addr)));  //将点分十进制转为二进制
-    if(ret < 0){
+    ret1 = inet_pton(AF_INET,ip,(void *)(&(client_addr->sin_addr.s_addr)));  //将点分十进制转为二进制
+    if(ret1 < 0){
         Error("Can't set remote->sin_addr.s_addr");
-    }else if(ret == 0){
+    }else if(ret1 == 0){
         Error("it is not a valid IP address\n");
     }
-    if(connect(client_sock,(struct sockaddr *)client_addr,sizeof(struct sockaddr)) < 0){
-        Error("Could not connect!\n");
+    int ret2 = connect(client_sock,(struct sockaddr *)client_addr,sizeof(struct sockaddr));
+    while(ret2 < 0){
+        i++;
+        printf("server can not connect! retry %d times\n",i);
+        sleep(3);
+        ret2 = connect(client_sock,(struct sockaddr *)client_addr,sizeof(struct sockaddr));
+        if(i == 4)
+            Error("Could not connect!\n");
     }
     free(client_addr);
     return client_sock;
@@ -92,11 +102,12 @@ void sendmessage(char *get,int sock)
     int htmlstart=0;
     char *htmlcontent;
     char *receive_info;
-    fprintf(stdout,"---------------------------receive informations are:---------------------\n");
+    fprintf(stdout,"---------------------------receive http_information is:---------------------\n");
 
     while((flag = recv(sock,buf,BUFSIZ,0)) > 0){
         buf[strlen(buf) + 1] = '\0';
         fprintf(stdout,buf);
+
         if(htmlstart == 0){
             htmlcontent = strstr(buf,"\r\n\r\n");   //定位至服务器发送的内容位置
             if(htmlcontent != NULL){
@@ -154,15 +165,29 @@ char *get_ip(char *host){                    //进行域名解析，返回ip地�
     return ip;
 }
 
+char *get_time(){
+    time_t rawtime;
+    struct tm * timeinfo;
+    char *now_time;
+    time(&rawtime);
+    timeinfo = localtime(&rawtime);
+    now_time = asctime(timeinfo);
+    now_time[strlen(now_time) - 1] = '\0';
+    return now_time;
+}
+
 char *build_get_query(char *host,char *path){
     char *query;
-    char *getpath=path;
-    char *tpl="GET %s HTTP/1.1\r\nHost:%s\r\nAccept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8\r\nUser-Agent:%s\r\nAccept-Language:%s\r\n\r\n";
-    query = (char *)malloc(strlen(host)+strlen(getpath)+strlen(USERAGENT)+strlen(tpl)+strlen(ACCEPTLANGUAGE) - 5);
+    char *getpath = path;
+    char *time = get_time();
+    //time[strlen(time) - 1] = '\0';
+    //printf("time is %s",time);
+    char *tpl="GET %s HTTP/1.1\r\nHost:%s\r\nDate:%s\r\nAccept:text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8\r\nUser-Agent:%s\r\nAccept-Language:%s\r\n\r\n";
+    query = (char *)malloc(strlen(host) + strlen(getpath) + strlen(time) + strlen(USERAGENT) + strlen(tpl) + strlen(ACCEPTLANGUAGE) - 5);
     if(query == NULL){
         Error("query malloc() fail!\n");
     }else{
-        sprintf(query,tpl,getpath,host,USERAGENT,ACCEPTLANGUAGE);
+        sprintf(query,tpl,getpath,host,time,USERAGENT,ACCEPTLANGUAGE);
         return query;
     }
 }
