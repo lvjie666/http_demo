@@ -13,7 +13,7 @@
 #include<ctype.h>
 #include<pthread.h>
 #include<time.h>
-//const int port = 8888;        //指定端口号
+const int port = 8888;        //指定端口号
 
 int create_socket();
 int Bind(int port);
@@ -24,21 +24,26 @@ void get_url(char *req,int client);
 char srcpath[100] ="";           //record the url path
 void src_not_found(int client);
 char *get_time();
+void judgement();
 
 int main(int argc,char *argv[])
 {
     int server_sock;
-    int client_sock;
-    int port = atoi(argv[1]);
+    int client_sock = -1;
+    //int port = atoi(argv[1]);
     server_sock = Bind(port);
     struct sockaddr_in client_addr;
+    pthread_t judge_exit;
     pthread_t newthread;
     socklen_t client_addr_length = sizeof(client_addr);  //和int具有相同的长度
     fprintf(stdout,"---------The server is open and waiting for the client to connect.--------------\n");
+    fprintf(stdout,"----------------(you can press the enter to close the server.)------------------\n");
 //    while(1){
 //        Accept_and_Send(server_sock);
 //        fprintf(stdout,"--------------------------------------------------------------------------------\n");
 //    }
+    if(pthread_create(&judge_exit,NULL,judgement,NULL) != 0)
+        Error("judge_thread_create error\n");
     while(1){
         client_sock = accept(server_sock,(struct sockaddr*)&client_addr,&client_addr_length); //接受客户端请求
         if(client_sock == -1){
@@ -50,7 +55,13 @@ int main(int argc,char *argv[])
     close(server_sock);
     return 0;
 }
-
+void judgement(){
+    char c = 0;
+    while(c != '\n'){
+        c = getchar();
+    }
+    Error("the server has exit!\n");
+}
 int create_socket()
 {
     int sock;

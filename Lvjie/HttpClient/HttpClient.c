@@ -20,6 +20,7 @@ void Error(char *message);
 #define PAGE "/"
 #define USERAGENT "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/30.0.1599.114 Safari/537.36"
 #define ACCEPTLANGUAGE "zh-CN,zh;q=0.8,en;q=0.6,en-US;q=0.4,en-GB;q=0.2"
+const int PORT = 8888;
 
 int main(int argc,char **argv)
 {
@@ -29,18 +30,35 @@ int main(int argc,char **argv)
     char *host;
     char *path;
     int port;
-    if(argc==1 || argc==2)
+    if(argc == 1)             //只有./httpclient
     {
         usage();
         exit(2);
     }
-    host = argv[1];       //ip地址
-    port = atoi(argv[2]);   //端口号
-    if(argc == 3){
-        path = PAGE;
-    }else{
-        path = argv[3];      //文件路径
-    }
+    host = argv[1];
+    if((strcmp(host,"127.0.0.1") == 0) || (strcmp(host,"localhost") == 0)){  //当访问本地地址时     
+        printf("进入if循环\n");   
+        port = 8888;
+        if(argc == 2)            //若参数为2个，则采用默认路径
+            path = PAGE;
+        else if(argc == 3)       //若为三个参数，则寻找用户输入的路径是否存在
+            path = argv[2];
+        else{                    //否则报错
+            usage();
+            exit(2);
+        }
+    }else{                        //访问外网
+        printf("进入else\n");
+        port = 80;
+        if(argc == 2){            //若2个参数，则采用默认路径
+            path = PAGE;
+        }else if(argc == 3){
+            path = argv[2];
+        }else{
+            usage();
+            exit(2);
+        }
+    } 
     printf("hostName:%s,port:%d,path:%s\n",host,port,path);
     ip=get_ip(host);
     sock = Connect(port,ip);
@@ -138,7 +156,8 @@ void sendmessage(char *get,int sock)
 }
 
 void usage(){
-    fprintf(stdout,"USAGE:example:127.0.0.1 8888 or 127.0.0.1 8888 /Lvjie/hello.c\n");
+    fprintf(stdout,"if you want to visit localhost,please input ./HttpClient 127.0.0.1 or ./HttpClient 127.0.0.1 /Lvjie/index.html\n");
+    fprintf(stdout,"if you want to visit www,please input ./HttpClient www.baidu.com or ./HttpClient www.baidu.com /index.html\n");
 }
 
 int create_socket(){
