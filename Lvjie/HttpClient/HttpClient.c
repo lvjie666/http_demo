@@ -8,14 +8,14 @@
 #include<unistd.h>
 #include<time.h>
 
-char *get_time();
-int create_socket();
-char *get_ip(char *host);
-int Connect(int port,char *ip);
-char *build_get_query(char *host,char *path);
-void sendmessage(char *get,int sock);
-void usage();
-void Error(char *message);
+char *get_time();                               //获取当前系统时间
+int create_socket();                            //创建一个表示socket的文件描述符
+char *get_ip(char *host);                       //将域名转换为IP地址
+int Connect(int port,char *ip);                 //进行三次握手
+char *build_get_query(char *host,char *path);   //组装http报头信息
+void sendmessage(char *get,int sock);           //发送报文
+void usage();                                   //提醒用户输入信息
+void Error(char *message);                      //报错信息
 
 #define PAGE "/"
 #define USERAGENT "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/30.0.1599.114 Safari/537.36"
@@ -36,8 +36,7 @@ int main(int argc,char **argv)
         exit(2);
     }
     host = argv[1];
-    if((strcmp(host,"127.0.0.1") == 0) || (strcmp(host,"localhost") == 0)){  //当访问本地地址时     
-        printf("进入if循环\n");   
+    if((strcmp(host,"127.0.0.1") == 0) || (strcmp(host,"localhost") == 0)){  //当访问本地地址时      
         port = 8888;
         if(argc == 2)            //若参数为2个，则采用默认路径
             path = PAGE;
@@ -48,7 +47,6 @@ int main(int argc,char **argv)
             exit(2);
         }
     }else{                        //访问外网
-        printf("进入else\n");
         port = 80;
         if(argc == 2){            //若2个参数，则采用默认路径
             path = PAGE;
@@ -59,10 +57,10 @@ int main(int argc,char **argv)
             exit(2);
         }
     } 
-    printf("hostName:%s,port:%d,path:%s\n",host,port,path);
-    ip=get_ip(host);
-    sock = Connect(port,ip);
-    get = build_get_query(host,path);
+    printf("you input hostName is :%s,port is :%d,path is :%s\n",host,port,path);
+    ip=get_ip(host);                        
+    sock = Connect(port,ip);                 
+    get = build_get_query(host,path);       
     sendmessage(get,sock);
     free(ip);
     close(sock);
@@ -90,6 +88,11 @@ int Connect(int port,char *ip)
     }else if(ret1 == 0){
         Error("it is not a valid IP address\n");
     }
+    /*int connect(int sockfd,const struct sockaddr* addr,socklen_t addrlen)
+     * sockfd:需要连接到服务端的socket
+     * addr:服务端地址
+     * addrlen:地址长度
+     */
     int ret2 = connect(client_sock,(struct sockaddr *)client_addr,sizeof(struct sockaddr));
     while(ret2 < 0){
         i++;
@@ -98,7 +101,7 @@ int Connect(int port,char *ip)
         ret2 = connect(client_sock,(struct sockaddr *)client_addr,sizeof(struct sockaddr));
         if(i == 4)
             Error("Could not connect!\n");
-    }
+    }  //如果首次连接没有成功，则尝试四次后关闭客户端
     free(client_addr);
     return client_sock;
 }
@@ -110,6 +113,12 @@ void sendmessage(char *get,int sock)
     int flag = 0;
     int ret;
     while(flag < strlen(get)){
+        /*ssize_t send(int sock,const void *buf,size_t len,int flags);
+         * sock:将要发送数据的socket
+         * buf:发送数据的缓冲区
+         * len:发送数据的长度
+         * flags:一般设置为0
+         */
         ret = send(sock,get+flag,strlen(get) - flag,0);
         if(ret == -1){
             Error("Can't send query!");
@@ -124,7 +133,7 @@ void sendmessage(char *get,int sock)
 
     while((flag = recv(sock,buf,BUFSIZ,0)) > 0){
         buf[strlen(buf) + 1] = '\0';
-        fprintf(stdout,buf);
+        fprintf(stdout,"%s",buf);                 //输出接收到的内容
 
         if(htmlstart == 0){
             htmlcontent = strstr(buf,"\r\n\r\n");   //定位至服务器发送的内容位置
@@ -140,7 +149,7 @@ void sendmessage(char *get,int sock)
             if(NULL == filerecv){
                 Error("open error\n");
             }
-            fprintf(filerecv,"%s",htmlcontent);
+            fprintf(filerecv,"%s",htmlcontent);   //将接收到的除去报文头后保存至本地
             fclose(filerecv);
             //fprintf(stdout,"%s",htmlcontent);
         }
@@ -162,6 +171,11 @@ void usage(){
 
 int create_socket(){
     int sock;
+    /*int socket(int domain,int type,int protocol)
+     * domain:协议域，AF_INET IPv4协议
+     * type:指定socket类型，SOCK_STREAM即TCP连接
+     * protocol:指定某个协议的特定类型
+     */
     if((sock=socket(AF_INET,SOCK_STREAM,IPPROTO_TCP))<0){
         perror("Can't create TCP socket!\n");
         exit(1);
@@ -174,13 +188,13 @@ char *get_ip(char *host){                    //进行域名解析，返回ip地�
     int iplen=15;
     char *ip=(char *)malloc(iplen+1);
     memset(ip,0,iplen+1);
-    if((hent=gethostbyname(host))==NULL){
-        Error("Can't get ip");
+    if((hent=gethostbyname(host))==NULL){    //用域名或者主机名获取IP地址
+        Error("Can't get ip\n");
     }
-    if(inet_ntop(AF_INET,(void *)hent->h_addr_list[0],ip,iplen)==NULL){
+    if(inet_ntop(AF_INET,(void *)hent->h_addr_list[0],ip,iplen)==NULL){   //将二进制转换为点分十进制
         Error("Can't resolve host!\n");
     }
-    printf("the host's ip is:%s\n",ip); 
+    printf("the host ip is:%s\n",ip); 
     return ip;
 }
 
@@ -199,8 +213,6 @@ char *build_get_query(char *host,char *path){
     char *query;
     char *getpath = path;
     char *time = get_time();
-    //time[strlen(time) - 1] = '\0';
-    //printf("time is %s",time);
     char *tpl="GET %s HTTP/1.1\r\nHost:%s\r\nDate:%s\r\nAccept:text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8\r\nUser-Agent:%s\r\nAccept-Language:%s\r\n\r\n";
     query = (char *)malloc(strlen(host) + strlen(getpath) + strlen(time) + strlen(USERAGENT) + strlen(tpl) + strlen(ACCEPTLANGUAGE) - 5);
     if(query == NULL){

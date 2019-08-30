@@ -15,16 +15,16 @@
 #include<time.h>
 const int port = 8888;        //指定端口号
 
-int create_socket();
-int Bind(int port);
-int Listen(int server_sock);
-void Accept_and_Send(int server_sock);
-void Error(char *message);
-void get_url(char *req,int client);
-char srcpath[100] ="";           //record the url path
-void src_not_found(int client);
-char *get_time();
-void judgement();
+int create_socket();                   //创建socket描述符
+int Bind(int port);                    //把地址族中的特定地址赋给socket
+int Listen(int server_sock);           //监听socket
+void Accept_and_Send(int server_sock); //接收请求并返回请求的东西
+void Error(char *message);             //错误消息
+void get_url(char *req,int client);    //得到请求中的资源路径
+char srcpath[100] ="";                 //全局变量，用来记录资源路径
+void src_not_found(int client);        //请求资源路径不存在报错信息
+char *get_time();                      //获取系统时间
+void judgement();                      //判断服务端是否结束
 
 int main(int argc,char *argv[])
 {
@@ -55,7 +55,7 @@ int main(int argc,char *argv[])
     close(server_sock);
     return 0;
 }
-void judgement(){
+void judgement(){           //用户敲击回车，服务端就断开连接，结束运行
     char c = 0;
     while(c != '\n'){
         c = getchar();
@@ -85,6 +85,11 @@ int Bind(int port)
     server_addr->sin_family = PF_INET;
     server_addr->sin_port = htons(port);
     server_sock = create_socket();
+    /*int bind(int socket,const struct sockaddr *addr,socklen_t *addrlen)
+     *socket:需要绑定地址的socket
+     *addr:需要连接的地址
+     *addrlen:地址参数长度
+     */
     ret = bind(server_sock,(struct sockaddr *)server_addr,sizeof(struct sockaddr));
     if(ret == -1){
         Error("bind() error!\n");

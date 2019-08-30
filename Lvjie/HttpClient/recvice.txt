@@ -1,11 +1,7 @@
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="utf-8">
-<title>welcome to lvjie server</title>
-</head>
-<body>
-    <h1>this is my first title</h1>
-    <p>the html is in /documents/index.html</p>
-</body>
-</html>
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">
+<html><head>
+<title>302 Found</title>
+</head><body>
+<h1>Found</h1>
+<p>The document has moved <a href="http://www.baidu.com/search/error.html">here</a>.</p>
+</body></html>
