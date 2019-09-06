@@ -1,0 +1,139 @@
+body {
+    font-family: "Microsoft Yahei", sans-serif;
+    font-weight: lighter;
+}
+ 
+header {
+    background-image: url(image/2.jpeg);
+    color: white;
+    width: 1600px;
+    height: 990px;
+    text-align: center;
+    margin: 0 auto;
+}
+ 
+#title {
+    display: inline-block;
+    font-size: 64px;
+    font-weight: bold;
+    padding-top: 200px;
+    width: 960px;
+}
+ 
+#introduction{
+    display: inline-block;
+    box-sizing: border-box;
+    width: 960px;
+    font-size: 24px;
+    font-weight: bold;
+    padding: 70px 70px 100px 70px;
+}
+ 
+#login {
+    display: inline-block;
+    font-weight: bold;
+    border: 1px solid rgb(255, 255, 255);
+    width: 960px;
+    height: 240px;
+}
+ 
+#login div:first-child {
+    font-size: 20px;
+    transform: scale(1.2, 1);
+    padding-top: 60px;
+    padding-bottom: 15px;
+}
+ 
+#login div:nth-child(2) {
+    font-size: 1em;
+    transform: scale(1.2, 1);
+    color: rgb(90, 90, 90);
+}
+ 
+#login div input:first-child {
+    width: 300px;
+    height: 50px;
+    border: none;
+}
+ 
+#login div input:nth-child(2) {
+    width: 300px;
+    height: 50px;
+    border: none;
+}
+ 
+#login div input:nth-child(3) {
+    width: 120px;
+    height: 50px;
+    background-color: #000000;
+    color: #ffffff;
+    border: none;
+}
+
+section {
+    color: white;
+    width: 1600px;
+    text-align: center;
+    margin: 0 auto;
+}
+
+#photos {
+    width: 960px;
+    height: 1080px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+#photos div:first-child{
+    font-size: 32px;
+    margin-top: 100px;
+    color: #000000;
+}
+
+#photos div:nth-child(2){
+    font-size: 16px;
+    margin-top: 20px;
+    color: #000000;
+}
+
+#nantong {
+    width: 960px;
+    height: 720px;
+    margin-top: 70px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-content: space-between;
+}
+ 
+#nantong img {
+    width: 470px;
+    height: 350px;
+}
+
+footer{
+    width: 1600px;
+    height:200px;
+    background-color: #000000;
+    margin:0 auto;
+    color:rgb(90, 90, 90);
+    font-size: 15px;
+}
+
+footer>div{
+    width: 1200px;
+    height: 300px;
+    display: flex;
+    justify-content: space-around;
+    margin: 0 auto;
+    padding-top: 30px;
+}
+
+footet div div{
+    width: 200px;
+    height: 300px;
+}
+
+footer div div p:first-child{
+    color:#ffffff;
+}
